@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ISC
 
-pragma solidity ^0.8.0;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+pragma solidity >=0.8.0 <0.9.0;
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract ERC20Token is ERC20 {
     address public owner;
@@ -17,6 +17,10 @@ contract ERC20Token is ERC20 {
         address indexed newOwner
     );
 
+    /// @param _name name of the token
+    /// @param _symbol symbol of the token
+    /// @param _supply total supply of the token
+    /// @param _owner owner of the token contract
     constructor(
         string memory _name,
         string memory _symbol,

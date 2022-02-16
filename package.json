@@ -1,23 +1,26 @@
 {
-  "name": "fraction",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prettier-contract": "prettier --write 'contracts/**/*.sol'",
+    "prettier": "npx prettier --write .",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "node": "hardhat node --network hardhat",
+    "test": "hardhat test --network hardhat",
+    "lint-contract": "prettier --list-different 'contracts/**/*.sol'",
+    "lint": "prettier --list-different ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@openzeppelin/contracts": "^4.4.2",
-    "hardhat": "^2.8.3"
+    "hardhat": "^2.8.3",
+    "prettier": "2.5.1"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@pinata/sdk": "^1.1.23",
     "@primitivefi/hardhat-dodoc": "^0.1.3",
     "chai": "^4.3.4",
     "dotenv": "^16.0.0",
@@ -31,10 +34,9 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.3",
     "hardhat": "^2.8.2",
+    "hardhat-contract-sizer": "^2.4.0",
     "hardhat-gas-reporter": "^1.0.7",
     "hardhat-spdx-license-identifier": "^2.0.3",
-    "ipfs-http-client": "^55.0.0",
-    "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.17"

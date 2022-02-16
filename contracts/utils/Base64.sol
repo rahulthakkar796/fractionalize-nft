@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: ISC
 
-pragma solidity >=0.6.0;
+pragma solidity >=0.6.0 <0.9.0;
 
 /// @title Base64
 /// @author Brecht Devos - <brecht@loopring.org>
