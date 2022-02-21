@@ -32,7 +32,8 @@ contract ERC20Token is ERC20 {
     }
 
     ///@notice Performs batch transfer
-    ///@param _from array of from addresses to send the tokens from
+    ///@dev Can be used to perform many-to-many and one-to-many batch transfer
+    ///@param _from array of from addresses to send the tokens from(pass multi address array for many-to-many and pass single address array for one-to-many)
     ///@param _to array of to addresses to receive the tokens
     ///@param _amounts array of amounts
     function batchTransferFrom(
@@ -40,15 +41,27 @@ contract ERC20Token is ERC20 {
         address[] calldata _to,
         uint256[] calldata _amounts
     ) external {
-        require(
-            _from.length == _to.length && _to.length == _amounts.length,
-            "batchTransfer: arrays don't match"
-        );
-        for (uint256 i = 0; i < _to.length; i++) {
+        if(_from.length>1){
             require(
-                transferFrom(_from[i], _to[i], _amounts[i]),
-                "Unable to transfer token to the account"
+                _from.length == _to.length && _to.length == _amounts.length,
+                "batchTransfer: arrays don't match"
             );
+            for (uint256 i = 0; i < _to.length; i++) {
+                require(
+                    transferFrom(_from[i], _to[i], _amounts[i]),
+                    "Unable to transfer token to the account"
+                );
+            }
+        }
+        else if(_from.length==1){
+            require( _to.length == _amounts.length,
+            "batchTransfer: arrays don't match");
+            for (uint256 i = 0; i < _to.length; i++) {
+                require(
+                    transferFrom(_from[0], _to[i], _amounts[i]),
+                    "Unable to transfer token to the account"
+                );
+            }
         }
         emit TransferBatch(_from, _to, _amounts);
     }

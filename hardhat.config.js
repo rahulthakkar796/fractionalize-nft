@@ -23,9 +23,22 @@ module.exports = {
       },
     },
   },
-  networks: {},
+  networks: {
+    matic: {
+      url: process.env.MATIC_TESTNET,
+      accounts: {
+        count: 10,
+        initialIndex: 0,
+        mnemonic: process.env.MNEMONIC,
+        path: "m/44'/60'/0'/0",
+      },
+    },
+  },
+  mocha: {
+    timeout: 1000000,
+  },
   gasReporter: {
-    enabled: true,
+    enabled: false,
     currency: "USD",
     coinmarketcap: process.env.CMC_KEY,
     token: "MATIC",

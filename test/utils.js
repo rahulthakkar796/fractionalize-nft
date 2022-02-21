@@ -13,7 +13,7 @@ let network =
 async function generateAccounts(length, id, amount) {
   const accounts = await ethers.getSigners();
   let from = [accounts[0].address, accounts[2].address, accounts[3].address];
-  let to = [accounts[4].address, accounts[5].address, accounts[6].address];
+  let to = [accounts[4].address, accounts[5].address];
   let fromAccs = [];
   let toAccs = [];
   let idArr = [];
@@ -21,7 +21,7 @@ async function generateAccounts(length, id, amount) {
 
   while (fromAccs.length < length) {
     let fromVal = from[Math.floor(Math.random() * 3)];
-    let toVal = to[Math.floor(Math.random() * 3)];
+    let toVal = to[Math.floor(Math.random() * 2)];
     fromAccs.push(fromVal);
     toAccs.push(toVal);
     idArr.push(id);

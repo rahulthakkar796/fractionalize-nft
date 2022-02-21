@@ -121,7 +121,8 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
     }
 
     ///@notice Performs bulk transfer
-    ///@param _from array of from addresses to send the tokens from
+    ///@dev Can be used to perform many-to-many and one-to-many bulk transfer
+    ///@param _from array of from addresses to send the tokens from(pass multi address array for many-to-many and pass single address array for one-to-many)
     ///@param _to array of to addresses to receive the tokens
     ///@param _ids array of NFT ids to transfer
     ///@param _amounts array of amounts
@@ -133,14 +134,22 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
         uint256[] calldata _amounts,
         bytes calldata _data
     ) external {
-        require(
-            (_from.length == _to.length) &&
-                (_ids.length == _amounts.length) &&
-                (_amounts.length == _from.length),
-            "safeBulkTransferFrom: arrays mismatch"
-        );
-        for (uint256 i = 0; i < _from.length; ++i) {
-            safeTransferFrom(_from[i], _to[i], _ids[i], _amounts[i], _data);
+        if(_from.length>1){
+            require(
+                (_from.length == _to.length) &&
+                    (_ids.length == _amounts.length) &&
+                    (_amounts.length == _from.length),
+                "safeBulkTransferFrom: arrays mismatch"
+            );
+            for (uint256 i = 0; i < _from.length; ++i) {
+                safeTransferFrom(_from[i], _to[i], _ids[i], _amounts[i], _data);
+            }
+        }
+        else if(_from.length==1){
+            require(_to.length == _ids.length && _ids.length == _amounts.length,"safeBulkTransferFrom:arrays mismatch");
+            for (uint256 i = 0; i < _to.length; ++i) {
+                safeTransferFrom(_from[0], _to[i], _ids[i], _amounts[i], _data);
+            }
         }
         emit TransferBulk(msg.sender, _from, _to, _ids, _amounts);
     }
