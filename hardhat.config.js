@@ -35,10 +35,9 @@ module.exports = {
     },
 
     edge: {
-      url: "http://localhost:20002",
+      url: "http://localhost:10002",
       accounts: {
         count: 10,
-        initialIndex: 0,
         mnemonic: process.env.MNEMONIC,
         path: "m/44'/60'/0'/0",
       },
@@ -60,7 +59,7 @@ module.exports = {
   dodoc: {
     runOnCompile: true,
     testMode: false,
-    include: ["ERC20Token", "ERC721Token", "ERC1155Token"],
+    include: ["Signature", "WhiteList", "ERC1155Token"],
   },
   spdxLicenseIdentifier: {
     overwrite: false,

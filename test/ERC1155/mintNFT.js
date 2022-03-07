@@ -1,14 +1,17 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { BigNumber } = ethers;
 const { metadata, generateAccounts } = require("../utils");
+const { Approval } = require("../../lib/approveSigner");
+const { NFTMint } = require("../../lib/nftSigner");
 describe("Tests for ERC1155 approach", async function () {
   let nftContract;
   let accounts;
   let totalTime;
+  let owner;
 
   before(async () => {
     accounts = await ethers.getSigners();
+    owner = accounts[0];
     const NFT = await ethers.getContractFactory("ERC1155Token");
     nftContract = await NFT.deploy("data:application/json;base64,");
     const txn = await nftContract.addToWhitelist(accounts[1].address);
@@ -48,16 +51,21 @@ describe("Tests for ERC1155 approach", async function () {
 
   // function to approve fractionalized tokens to test account to test the bulk transfer
   async function setApproval(account) {
-    const approve = await nftContract
-      .connect(account)
-      .setApprovalForAll(accounts[6].address, true);
-
-    await approve.wait();
-
-    const isApproved = await nftContract.isApprovedForAll(
-      account.address,
-      accounts[6].address
+    const spender = accounts[6].address;
+    const operator = account.address;
+    const approval = true;
+    const permit = new Approval(nftContract, account);
+    const permitSignature = await permit.createSignature(
+      operator,
+      spender,
+      approval
     );
+
+    const approveTxn = await nftContract.connect(owner).permit(permitSignature);
+
+    await approveTxn.wait();
+
+    const isApproved = await nftContract.isApprovedForAll(operator, spender);
 
     expect(isApproved).to.be.equal(true);
   }
@@ -74,7 +82,7 @@ describe("Tests for ERC1155 approach", async function () {
     const bulkTransfer = await nftContract
       .connect(accounts[6])
       .safeBulkTransferFrom(from, to, id, amounts, "0x");
-    // console.log("receipt:", bulkTransfer);
+
     // listen for the event emitted by the bulk transfer and fetch emitted values to validate the transaction
     let event = await bulkTransfer.wait();
 
@@ -110,18 +118,18 @@ describe("Tests for ERC1155 approach", async function () {
         ...metadata,
         totalSupply: 1000000,
       };
+      const nftMint = new NFTMint(nftContract, accounts[1]);
+      const nft = await nftMint.createSignature(
+        accounts[1].address,
+        params.deedNo,
+        params.assetID,
+        params.issuerID,
+        params.projectID,
+        params.totalSupply
+      );
 
       // mint NFT and fractionalize it
-      const txn = await nftContract
-        .connect(accounts[1])
-        .createToken(
-          params.deedNo,
-          params.assetID,
-          params.issuerID,
-          params.projectID,
-          params.totalSupply
-        );
-
+      const txn = await nftContract.connect(accounts[0]).createToken(nft);
       // listen for the event emitted by the createToken method and fetch emitted values to validate the transaction
       let event = await txn.wait();
       event = event.events.find((event) => event.event === "CreatedNFT");
@@ -163,10 +171,10 @@ describe("Tests for ERC1155 approach", async function () {
         await setApproval(accountArr[i]);
       }
 
-      // generate 280 test accounts to process and test bulk transfer(can process upto 310 transfers per call)
+      // generate 280 test accounts to process and test bulk transfer(can process upto 310 transfers per call in local hardhat node)
       // you can process upto 400 transfers using polygon-edge network
       const { from, to, id, amounts } = await generateAccounts(
-        400, // number of accounts you want to generate
+        310, // number of accounts you want to generate
         0, // token id you want to transfer(used single ID for the testing puropose)
         1 // amount of tokens you want to transfer per transfer(used single value for the testing purpose)
       );

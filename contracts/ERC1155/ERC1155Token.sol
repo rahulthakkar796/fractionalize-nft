@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: ISC
 
 pragma solidity >=0.8.0 <0.9.0;
+pragma abicoder v2; // required to accept structs as function parameters
+
 import {OnChainMetadata} from "../utils/OnChainMetadata.sol";
 import {ERC1155Supply, ERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {WhiteList} from "../utils/WhiteList.sol";
+import {Signature,EIP712} from "../utils/Signature.sol";
 
-contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
+contract ERC1155Token is ERC1155Supply, Ownable, WhiteList, Signature {
     uint256 private tokenCounter;
+
     struct FractionDetails {
         address issuer;
         uint256 tokenID;
@@ -35,14 +39,15 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
         );
         _;
     }
-    modifier onlyWhitelisted() {
-        require(whitelist[msg.sender], "Caller is not an authorized issuer");
+    modifier onlyWhitelisted(NFTMint calldata nft) {
+        address signer= _verifyNFT(nft);
+        require(whitelist[signer],"Address is not whitelisted");
         _;
     }
     
 
     /// @param _uri baseUri to serve the metadata
-    constructor(string memory _uri) ERC1155(_uri) {}
+    constructor(string memory _uri) ERC1155(_uri) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {}
 
     /// @notice Return the uri for the given tokenId
     /// @return returns encoded base64 token uri
@@ -55,30 +60,23 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
         return (_uris[_tokenId]);
     }
 
-    /// @notice creates a NFT and fractionalizes it.
-    /// @param _deedNo deed number provided by user
-    /// @param _assetID asset ID provided by user
-    /// @param _issuerID issuer ID provided by user
-    /// @param _projectID project ID provided by user
-    /// @param _totalSupply totalSupply of NFT you want fractionalize
+    /// @notice Verifies signature, mints and fractionalizes the NFT
+    /// @dev only owner can call this function and signer of the signature must be a whitlisted address
+    /// @param nft the object of the NFTMint struct along with a signed signature by the owner of the asset
     function createToken(
-        string memory _deedNo,
-        string memory _assetID,
-        string memory _issuerID,
-        string memory _projectID,
-        uint256 _totalSupply
-    ) external onlyWhitelisted {
+        NFTMint calldata nft
+    ) external onlyOwner onlyWhitelisted(nft) {
         uint256 tokenID= tokenCounter;
         tokenCounter++;
-        _mint(msg.sender, tokenID, _totalSupply + 1, "");
-        _setTokenURI(tokenID, _deedNo, _assetID, _issuerID, _projectID);
+        _mint(nft.owner, tokenID, nft.totalSupply + 1, "");
+        _setTokenURI(tokenID, nft.deedNo, nft.assetID, nft.issuerID, nft.projectID);
         fractionDetails[tokenID].tokenID = tokenID;
-        fractionDetails[tokenID].issuer = msg.sender;
-        fractionDetails[tokenID].tokens = _totalSupply;
-        emit CreatedNFT(tokenID,  msg.sender);
+        fractionDetails[tokenID].issuer = nft.owner;
+        fractionDetails[tokenID].tokens = nft.totalSupply;
+        emit CreatedNFT(tokenID,  nft.owner);
     }
 
-    ///@notice set the token URI for the given NFT
+    /// @notice set the token URI for the given NFT
     function _setTokenURI(
         uint256 tokenId,
         string memory _deedNo,
@@ -95,22 +93,24 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
         );
     }
 
-    ///@notice Whitelits the given address
-    ///@param _issuer address of the issuer you want to whitelist
+    /// @notice Whitelits the given address
+    /// @dev only owner can call this function
+    /// @param _issuer address of the issuer you want to whitelist
     function addToWhitelist(address _issuer) public override onlyOwner {
         super.addToWhitelist(_issuer);
     }
 
-    ///@notice Removes the given address from the whitelist
-    ///@param _issuer address of the issuer you want to remove from the whielist
+    /// @notice Removes the given address from the whitelist
+    /// @dev only owner can call this function
+    /// @param _issuer address of the issuer you want to remove from the whielist
     function removeFromWhitelist(address _issuer) public override onlyOwner {
         super.removeFromWhitelist(_issuer);
     }
 
-    ///@notice mints fractionalized NFTs for the given NFT ID
-    ///@param _to address to send the NFT tokens
-    ///@param _id NFT ID to mint the tokens for this ID
-    ///@param _amount Amount of tokens you want to mint
+    /// @notice mints fractionalized NFTs for the given NFT ID
+    /// @param _to address to send the NFT tokens
+    /// @param _id NFT ID to mint the tokens for this ID
+    /// @param _amount Amount of tokens you want to mint
     function mintTokens(
         address _to,
         uint256 _id,
@@ -120,20 +120,19 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
         _mint(_to, _id, _amount, "");
     }
 
-    ///@notice Performs bulk transfer
-    ///@dev Can be used to perform many-to-many and one-to-many bulk transfer
-    ///@param _from array of from addresses to send the tokens from(pass multi address array for many-to-many and pass single address array for one-to-many)
-    ///@param _to array of to addresses to receive the tokens
-    ///@param _ids array of NFT ids to transfer
-    ///@param _amounts array of amounts
-    ///@param _data bytes data you want to pass along with the transaction
+    /// @notice Performs bulk transfer
+    /// @dev Can be used to perform many-to-many and one-to-many bulk transfer
+    /// @param _from array of from addresses to send the tokens from(pass multi address array for many-to-many and pass single address array for one-to-many)
+    /// @param _to array of to addresses to receive the tokens
+    /// @param _ids array of NFT ids to transfer
+    /// @param _amounts array of amounts
     function safeBulkTransferFrom(
-        address[] calldata _from,
-        address[] calldata _to,
+        address[] memory _from,
+        address[] memory _to,
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
-        bytes calldata _data
-    ) external {
+        bytes calldata data
+    ) public {
         if(_from.length>1){
             require(
                 (_from.length == _to.length) &&
@@ -142,15 +141,24 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList {
                 "safeBulkTransferFrom: arrays mismatch"
             );
             for (uint256 i = 0; i < _from.length; ++i) {
-                safeTransferFrom(_from[i], _to[i], _ids[i], _amounts[i], _data);
+                safeTransferFrom(_from[i], _to[i], _ids[i], _amounts[i], data);
             }
         }
         else if(_from.length==1){
             require(_to.length == _ids.length && _ids.length == _amounts.length,"safeBulkTransferFrom:arrays mismatch");
             for (uint256 i = 0; i < _to.length; ++i) {
-                safeTransferFrom(_from[0], _to[i], _ids[i], _amounts[i], _data);
+                safeTransferFrom(_from[0], _to[i], _ids[i], _amounts[i], data);
             }
         }
         emit TransferBulk(msg.sender, _from, _to, _ids, _amounts);
+    }
+
+    /// @notice permit function for gasless approvals
+    /// @dev only owner can call this function
+    /// @param _permit the object of the Permit struct along with a signed signature by the owner of the NFT
+    function permit(Permit calldata _permit) public onlyOwner {
+        address signer= _verifyPermit(_permit);
+        require(signer==_permit.owner,"Signature mismatch");
+        _setApprovalForAll(_permit.owner,_permit.spender, _permit.approved);
     }
 }
