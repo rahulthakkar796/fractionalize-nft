@@ -26,6 +26,18 @@ Run tests
 npm run test
 ```
 
+Run demo on local hardhat node
+
+```bash
+npx hardhat run scripts/demo/demo.js
+```
+
+Run demo on local polygon edge node
+
+```bash
+npx hardhat run scripts/demo/demo.js --network edge
+```
+
 Start hardhat node for the external use
 
 ```bash

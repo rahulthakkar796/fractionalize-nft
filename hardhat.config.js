@@ -33,9 +33,18 @@ module.exports = {
         path: "m/44'/60'/0'/0",
       },
     },
+
+    edge: {
+      url: "http://localhost:10002",
+      accounts: {
+        count: 10,
+        mnemonic: process.env.MNEMONIC,
+        path: "m/44'/60'/0'/0",
+      },
+    },
   },
   mocha: {
-    timeout: 1000000,
+    timeout: 2000000,
   },
   gasReporter: {
     enabled: false,
@@ -50,7 +59,7 @@ module.exports = {
   dodoc: {
     runOnCompile: true,
     testMode: false,
-    include: ["ERC20Token", "ERC721Token", "ERC1155Token"],
+    include: ["Signature", "WhiteList", "ERC1155Token"],
   },
   spdxLicenseIdentifier: {
     overwrite: false,
