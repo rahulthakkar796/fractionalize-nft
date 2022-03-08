@@ -32,10 +32,11 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList, Signature {
         address indexed issuer
     );
 
-    modifier onlyIssuer(uint256 _id) {
+    modifier onlyIssuer(AdditionalMint calldata mint) {
+        address signer= _verifyAdditionalMint(mint);
         require(
-            msg.sender == fractionDetails[_id].issuer,
-            "Caller is not an issuer of the given NFT"
+            signer == fractionDetails[mint.id].issuer,
+            "Signer is not an issuer of the given NFT"
         );
         _;
     }
@@ -62,18 +63,19 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList, Signature {
 
     /// @notice Verifies signature, mints and fractionalizes the NFT
     /// @dev only owner can call this function and signer of the signature must be a whitlisted address
-    /// @param nft the object of the NFTMint struct along with a signed signature by the owner of the asset
+    /// @param nft the object of the NFTMint struct along with a signed signature of the owner of the asset
     function createToken(
         NFTMint calldata nft
     ) external onlyOwner onlyWhitelisted(nft) {
         uint256 tokenID= tokenCounter;
         tokenCounter++;
-        _mint(nft.owner, tokenID, nft.totalSupply + 1, "");
+        _mint(nft.issuer, tokenID, nft.totalSupply, ""); //assign fractional tokens to the issuer
+        _mint(owner(), tokenID, 1, ""); // assign actual NFT to the main fraction owner address(This NFT is not a part of the fractional tokens)
         _setTokenURI(tokenID, nft.deedNo, nft.assetID, nft.issuerID, nft.projectID);
         fractionDetails[tokenID].tokenID = tokenID;
-        fractionDetails[tokenID].issuer = nft.owner;
+        fractionDetails[tokenID].issuer = nft.issuer;
         fractionDetails[tokenID].tokens = nft.totalSupply;
-        emit CreatedNFT(tokenID,  nft.owner);
+        emit CreatedNFT(tokenID,  nft.issuer);
     }
 
     /// @notice set the token URI for the given NFT
@@ -108,16 +110,12 @@ contract ERC1155Token is ERC1155Supply, Ownable, WhiteList, Signature {
     }
 
     /// @notice mints fractionalized NFTs for the given NFT ID
-    /// @param _to address to send the NFT tokens
-    /// @param _id NFT ID to mint the tokens for this ID
-    /// @param _amount Amount of tokens you want to mint
+    /// @param mint the object of the AdditionalMint struct along with a signed signature of the issuer of the NFT
     function mintTokens(
-        address _to,
-        uint256 _id,
-        uint256 _amount
-    ) external onlyIssuer(_id) {
-        fractionDetails[_id].tokens += _amount;
-        _mint(_to, _id, _amount, "");
+        AdditionalMint calldata mint
+    ) external onlyIssuer(mint) onlyOwner{
+        fractionDetails[mint.id].tokens += mint.amount;
+        _mint(mint.to, mint.id, mint.amount, "");
     }
 
     /// @notice Performs bulk transfer
