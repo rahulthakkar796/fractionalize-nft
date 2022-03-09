@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 const { metadata, generateAccounts } = require("../utils");
 const { Approval } = require("../../lib/approveSigner");
 const { NFTMint } = require("../../lib/nftSigner");
+const { AdditionalMint } = require("../../lib/additionalMintSigner");
 describe("Tests for ERC1155 approach", async function () {
   let nftContract;
   let accounts;
@@ -135,7 +136,11 @@ describe("Tests for ERC1155 approach", async function () {
       event = event.events.find((event) => event.event === "CreatedNFT");
       const [, owner] = event.args;
 
-      const balance = await nftContract.balanceOf(accounts[1].address, 0);
+      const issuerBalance = await nftContract.balanceOf(accounts[1].address, 0);
+      const fractionOwnerBalance = await nftContract.balanceOf(
+        accounts[0].address,
+        0
+      );
       const supply = await nftContract.totalSupply(0);
 
       expect(owner).to.be.equal(
@@ -143,9 +148,16 @@ describe("Tests for ERC1155 approach", async function () {
         "owner address doesn't match"
       );
 
-      expect(params.totalSupply + 1).to.be.equal(
-        parseInt(balance),
-        "owner balance doesn't match"
+      // validate the issuer NFT balance, should be equal to the totalSupply
+      expect(params.totalSupply).to.be.equal(
+        parseInt(issuerBalance),
+        "issuer balance doesn't match"
+      );
+
+      // validate the Fraction owner NFT balance, should be always equal to 1
+      expect(1).to.be.equal(
+        parseInt(fractionOwnerBalance),
+        "fraction owner balance doesn't match"
       );
 
       expect(params.totalSupply + 1).to.be.equal(
@@ -230,13 +242,25 @@ describe("Tests for ERC1155 approach", async function () {
   describe("Additional mint", () => {
     it("Mint additional tokens", async () => {
       const supplyBefore = await nftContract.totalSupply(0);
+
+      const fractionOwner = accounts[0];
+      const issuer = accounts[1];
+
       const tokenId = 0;
       const amount = 10;
+      const to = issuer.address;
 
+      const mintSigner = new AdditionalMint(nftContract, issuer);
+      const signedMessage = await mintSigner.createSignature(
+        to,
+        tokenId,
+        amount
+      );
+        
       // mint fractionalized tokens for the additional supply
       const txn = await nftContract
-        .connect(accounts[1])
-        .mintTokens(accounts[1].address, tokenId, amount);
+        .connect(fractionOwner)
+        .mintTokens(signedMessage);
 
       await txn.wait();
 

@@ -31,12 +31,24 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
     /// @param totalSupply initial total supply of the fractions of the NFT.
     /// @param signature signature signed by the owner address to perform a gasless minting
     struct NFTMint{
-        address owner;
+        address issuer;
         string deedNo;
         string assetID;
         string issuerID;
         string projectID;
         uint256 totalSupply;
+        bytes signature;
+    }
+
+    /// @notice Represents a Additional mint message, signed by the issuer of the given NFT to mint a additional NFTs through gasless transaction
+    /// @param to address to mint tokens to
+    /// @param id NFT ID
+    /// @param amount amount of tokens you want to mint
+    /// @param signature signature signed by the owner address to perform a gasless minting
+    struct AdditionalMint{
+        address to;
+        uint256 id;
+        uint256 amount;
         bytes signature;
     }
    
@@ -74,14 +86,36 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
                 keccak256(
                     abi.encode(
                         keccak256(
-                           "NFTMint(address owner,string deedNo,string assetID,string issuerID,string projectID,uint256 totalSupply)"
+                           "NFTMint(address issuer,string deedNo,string assetID,string issuerID,string projectID,uint256 totalSupply)"
                         ),
-                        nft.owner,
+                        nft.issuer,
                         keccak256(bytes(nft.deedNo)),
                         keccak256(bytes(nft.assetID)),
                         keccak256(bytes(nft.issuerID)),
                         keccak256(bytes(nft.projectID)),
                         nft.totalSupply
+                    )
+                )
+            );
+    }
+
+    /// @notice Returns a hash of the AdditionalMint struct signature and its parameters, it doesn't include signature property of the AdditionalMint struct
+    /// @param mint instance of the AdditionalMint struct
+    function _hashAdditionalMint(AdditionalMint calldata mint)
+        public
+        view
+        returns (bytes32)
+    {
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "AdditionalMint(address to,uint256 id,uint256 amount)"
+                        ),
+                        mint.to,
+                        mint.id,
+                        mint.amount 
                     )
                 )
             );
@@ -118,5 +152,16 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
     {
         bytes32 digest = _hashNFT(nft);
         return ECDSA.recover(digest, nft.signature);
+    }
+
+    /// @notice Verifies the mint signature and returns the address of the signer
+    /// @param mint instance of the AdditionalMint struct along with signed signature inside
+    function _verifyAdditionalMint(AdditionalMint calldata mint)
+        public
+        view
+        returns (address)
+    {
+        bytes32 digest = _hashAdditionalMint(mint);
+        return ECDSA.recover(digest, mint.signature);
     }
 }

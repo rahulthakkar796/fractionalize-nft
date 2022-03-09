@@ -9,7 +9,7 @@ async function main() {
   await mintNFT(contract, owner, issuer);
   await permit(contract, owner, issuer);
   await bulkTransfer(contract, owner, issuer);
-  await additionalMint(contract, issuer);
+  await additionalMint(contract, owner, issuer);
 }
 
 main().catch((error) => {
