@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+  node1:
+    container_name: fraction-node1
+    image: fraction-node
+    networks:
+      - fraction-network
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    command: "./entrypoint.sh"
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+      - "20000:20000"
+      - "20001:20001"
+      - "20002:20002"
+      - "30000:30000"
+      - "30001:30001"
+      - "30002:30002"
+      - "40000:40000"
+      - "40001:40001"
+      - "40002:40002"
+    environment:
+      - DATA_DIR=/node1
+      - GRPC_PORT=10000
+      - LIBP2P_PORT=10001
+      - JSONRPC_PORT=10002
+      - ACCOUNT=${ACCOUNT}
+      - AMOUNT=${AMOUNT}
+      - BOOTNODE=y
+    env_file:
+      - .env
+    volumes:
+      - "./nodes/node1:/node1"
+      - "./docker/genesis.json:/genesis.json"
+
+  node2:
+    container_name: fraction-node2
+    image: fraction-node
+    command: "./entrypoint.sh"
+    environment:
+      - DATA_DIR=/node2
+      - GRPC_PORT=20000
+      - LIBP2P_PORT=20001
+      - JSONRPC_PORT=20002
+    env_file:
+      - .env
+    depends_on:
+      - node1
+    volumes:
+      - "./nodes/node2:/node2"
+      - "./docker/genesis.json:/genesis.json"
+    network_mode: service:node1
+
+  node3:
+    container_name: fraction-node3
+    image: fraction-node
+    command: "./entrypoint.sh"
+    environment:
+      - DATA_DIR=/node3
+      - GRPC_PORT=30000
+      - LIBP2P_PORT=30001
+      - JSONRPC_PORT=30002
+    env_file:
+      - .env
+    depends_on:
+      - node1
+      - node2
+    volumes:
+      - "./nodes/node3:/node3"
+      - "./docker/genesis.json:/genesis.json"
+    network_mode: service:node1
+
+  node4:
+    container_name: fraction-node4
+    image: fraction-node
+    command: "./entrypoint.sh"
+    environment:
+      - DATA_DIR=/node4
+      - GRPC_PORT=40000
+      - LIBP2P_PORT=40001
+      - JSONRPC_PORT=40002
+    env_file:
+      - .env
+    depends_on:
+      - node1
+      - node3
+    volumes:
+      - "./nodes/node4:/node4"
+      - "./docker/genesis.json:/genesis.json"
+    network_mode: service:node1
+
+networks:
+  fraction-network:
+    name: "fraction-network"

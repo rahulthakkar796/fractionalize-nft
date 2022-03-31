@@ -4,7 +4,6 @@ node_modules
 coverage
 coverage.json
 
-
 #Hardhat files
 cache
 artifacts
@@ -12,3 +11,6 @@ docs
 gasReport
 tasks
 scripts/tests
+
+nodes/*
+!nodes/.gitkeep
