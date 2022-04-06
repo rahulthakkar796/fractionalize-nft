@@ -1,17 +1,17 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
-import { metadata, generateAccounts } from "../../utils";
-import { Approval } from "../../lib/approve.signer";
-import { NFTMint } from "../../lib/nft.signer";
-import { AdditionalMint } from "../../lib/additionalMint.signer";
-import { ERC1155Token, ERC1155Token__factory } from "../../typechain";
 import {
-  NFTMint as Mint,
   AdditionalMint as AddMint,
+  NFTMint as Mint,
   Permit,
 } from "../../interfaces";
-import { BigNumber } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { AdditionalMint } from "../../lib/additionalMint.signer";
+import { Approval } from "../../lib/approve.signer";
+import { NFTMint } from "../../lib/nft.signer";
+import { ERC1155Token, ERC1155Token__factory } from "../../typechain";
+import { generateAccounts, metadata } from "../../utils";
 
 describe("Tests for ERC1155 approach", async function () {
   let nftContract: ERC1155Token;
@@ -158,10 +158,6 @@ describe("Tests for ERC1155 approach", async function () {
       const [id, owner] = eventData.args;
 
       const issuerBalance = await nftContract.balanceOf(accounts[1].address, 0);
-      const fractionOwnerBalance = await nftContract.balanceOf(
-        accounts[0].address,
-        0
-      );
       const supply = await nftContract.totalSupply(0);
 
       expect(owner).to.be.equal(
@@ -175,13 +171,7 @@ describe("Tests for ERC1155 approach", async function () {
         "issuer balance doesn't match"
       );
 
-      // validate the Fraction owner NFT balance, should be always equal to 1
-      expect(BigNumber.from(1)).to.be.equal(
-        fractionOwnerBalance,
-        "fraction owner balance doesn't match"
-      );
-
-      expect(params.totalSupply + 1).to.be.equal(
+      expect(params.totalSupply).to.be.equal(
         Number(supply),
         "totalSupply doesn't match"
       );
