@@ -1,11 +1,11 @@
-import {
-  TestOnChainMetadata,
-  TestOnChainMetadata__factory,
-} from "../../typechain";
-
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import {
+  TestOnChainMetadata,
+  TestOnChainMetadata__factory
+} from "../../typechain";
 import { metadata } from "../../utils";
+
 
 describe("Tests for OnChainMetadata contract", async function () {
   let metadataContract: TestOnChainMetadata;

@@ -28,6 +28,7 @@
     "@types/chai": "^4.2.18",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.2",
+    "buffer": "^6.0.3",
     "chai": "^4.3.4",
     "dotenv": "^16.0.0",
     "eslint": "^7.32.0",

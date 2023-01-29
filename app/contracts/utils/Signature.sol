@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-   abstract contract Signature is EIP712{
+abstract contract Signature is EIP712 {
     string internal constant SIGNING_DOMAIN = "FRACTION_GASLESS";
     string internal constant SIGNATURE_VERSION = "1";
 
@@ -28,7 +28,7 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
     /// @param projectID  project ID of the asset
     /// @param totalSupply initial total supply of the fractions of the NFT.
     /// @param signature signature signed by the owner address to perform a gasless minting
-    struct NFTMint{
+    struct NFTMint {
         address issuer;
         string deedNo;
         string assetID;
@@ -43,20 +43,16 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
     /// @param id NFT ID
     /// @param amount amount of tokens you want to mint
     /// @param signature signature signed by the owner address to perform a gasless minting
-    struct AdditionalMint{
+    struct AdditionalMint {
         address to;
         uint256 id;
         uint256 amount;
         bytes signature;
     }
-   
+
     /// @notice Returns a hash of the Permit struct signature and its parameters, it doesn't include signature property of the Permit struct
     /// @param permit instance of the Permit struct
-    function _hashPermit(Permit calldata permit)
-        public
-        view
-        returns (bytes32)
-    {
+    function _hashPermit(Permit calldata permit) public view returns (bytes32) {
         return
             _hashTypedDataV4(
                 keccak256(
@@ -66,7 +62,7 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
                         ),
                         permit.owner,
                         permit.spender,
-                        permit.approved 
+                        permit.approved
                     )
                 )
             );
@@ -74,17 +70,13 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
 
     /// @notice Returns a hash of the NFT struct signature and its parameters, it doesn't include signature property of the NFTMint struct
     /// @param nft instance of the NFTMint struct
-    function _hashNFT(NFTMint calldata nft)
-        public
-        view
-        returns (bytes32)
-    {
+    function _hashNFT(NFTMint calldata nft) public view returns (bytes32) {
         return
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                           "NFTMint(address issuer,string deedNo,string assetID,string issuerID,string projectID,uint256 totalSupply)"
+                            "NFTMint(address issuer,string deedNo,string assetID,string issuerID,string projectID,uint256 totalSupply)"
                         ),
                         nft.issuer,
                         keccak256(bytes(nft.deedNo)),
@@ -113,7 +105,7 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
                         ),
                         mint.to,
                         mint.id,
-                        mint.amount 
+                        mint.amount
                     )
                 )
             );
@@ -143,11 +135,7 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.
 
     /// @notice Verifies the nft signature and returns the address of the signer
     /// @param nft instance of the NFTMint struct along with signed signature inside
-    function _verifyNFT(NFTMint calldata nft)
-        public
-        view
-        returns (address)
-    {
+    function _verifyNFT(NFTMint calldata nft) public view returns (address) {
         bytes32 digest = _hashNFT(nft);
         return ECDSA.recover(digest, nft.signature);
     }

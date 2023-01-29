@@ -3,7 +3,6 @@
 pragma solidity >=0.6.0 <0.9.0;
 
 /// @title Base64
-/// @author Brecht Devos - <brecht@loopring.org>
 /// @notice Provides functions for encoding/decoding base64
 library Base64 {
     string internal constant TABLE_ENCODE =
